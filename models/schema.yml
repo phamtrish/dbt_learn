@@ -1,5 +1,29 @@
 version: 2
 
+sources:
+  - name: jaffle_shop
+    description: This is a replica of the Postgres database used by our app
+    database: raw
+
+    tables:
+      - name: orders
+        description: >
+          One record per order. Includes cancelled and deleted orders.
+        freshness:
+          warn_after: {count: 6, period: hour}
+          error_after: {count: 12, period: hour}
+        loaded_at_field: _ETL_LOADED_AT
+      - name: customers
+
+  - name: stripe
+    database: raw
+    tables:
+      - name: payment
+    freshness:
+      warn_after: {count: 6, period: hour}
+      error_after: {count: 12, period: hour}
+    loaded_at_field: _BATCHED_AT
+
 models:
   - name: customers
     description: One record per customer
@@ -30,6 +54,14 @@ models:
           - unique
           - not_null
       - name: status
+        description: Note that the status can change over time
         tests:
           - accepted_values:
               values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+  - name: orders
+    columns:
+      - name: order_id
+        description: Primary key of the orders table
+        tests:
+          - unique
+          - not_null
